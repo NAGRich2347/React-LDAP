@@ -1,0 +1,11 @@
+[
+  { "username": "student1", "passwordHash": "$2b$10$l9Asp32PMi2ZO12pHIvVgOwbvRmHnomQcyB1LMD5I3TfsJISIM7AK", "role": "student" },
+  { "username": "student2", "passwordHash": "$2b$10$l9Asp32PMi2ZO12pHIvVgOwbvRmHnomQcyB1LMD5I3TfsJISIM7AK", "role": "student" },
+  { "username": "student3", "passwordHash": "$2b$10$l9Asp32PMi2ZO12pHIvVgOwbvRmHnomQcyB1LMD5I3TfsJISIM7AK", "role": "student" },
+  { "username": "student4", "passwordHash": "$2b$10$l9Asp32PMi2ZO12pHIvVgOwbvRmHnomQcyB1LMD5I3TfsJISIM7AK", "role": "student" },
+  { "username": "librarian1", "passwordHash": "$2b$10$l9Asp32PMi2ZO12pHIvVgOwbvRmHnomQcyB1LMD5I3TfsJISIM7AK", "role": "librarian" },
+  { "username": "librarian2", "passwordHash": "$2b$10$l9Asp32PMi2ZO12pHIvVgOwbvRmHnomQcyB1LMD5I3TfsJISIM7AK", "role": "librarian" },
+  { "username": "reviewer1", "passwordHash": "$2b$10$l9Asp32PMi2ZO12pHIvVgOwbvRmHnomQcyB1LMD5I3TfsJISIM7AK", "role": "reviewer" },
+  { "username": "reviewer2", "passwordHash": "$2b$10$l9Asp32PMi2ZO12pHIvVgOwbvRmHnomQcyB1LMD5I3TfsJISIM7AK", "role": "reviewer" },
+  { "username": "admin1", "passwordHash": "$2b$10$l9Asp32PMi2ZO12pHIvVgOwbvRmHnomQcyB1LMD5I3TfsJISIM7AK", "role": "admin" }
+] 

@@ -1,0 +1,3 @@
+// --- Reviewer.js ---
+// React component for the reviewer stage of the workflow system.
+// Ensure all references to FinalApproval are now Reviewer, and LibrarianReview are now Librarian. 

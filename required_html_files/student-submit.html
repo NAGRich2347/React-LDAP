@@ -1,0 +1,108 @@
+<!-- student-submit.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Submission</title>
+  <link href="https://fonts.cdnfonts.com/css/bentonsans" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;}
+    body{margin:0;font-family:'BentonSans Book';display:flex;height:100vh;overflow:hidden;
+      background:#f1f1f1;color:#201436;transition:background .3s,color .3s;}
+    .settings-bar{position:fixed;top:15px;right:20px;display:flex;gap:1rem;z-index:1000;}
+    .settings-bar select,input[type=checkbox]{font-family:'BentonSans Book';}
+    .slider{position:relative;width:50px;height:24px;border-radius:24px;background:#ccc;transition:.4s;}
+    .slider::before{content:'☀';position:absolute;width:18px;height:18px;left:3px;bottom:3px;
+      background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:.4s;}
+    #darkToggle:checked+.slider{background:#4F2683;}
+    #darkToggle:checked+.slider::before{transform:translateX(26px);content:'🌙';}
+    .container{margin:auto;width:90%;max-width:500px;text-align:center;}
+    h1{font-family:'BentonSans Bold';}
+    input,textarea{width:100%;padding:.5rem;margin:.5rem 0;border:1px solid #ccc;border-radius:4px;
+      font-family:'BentonSans Book';transition:background .3s,color .3s;}
+    button{padding:.75rem 1.5rem;background:#4F2683;color:#fff;border:none;border-radius:4px;
+      cursor:pointer;font-family:'BentonSans Book';transition:background .3s;}
+    button:hover{background:#3d1c6a;}
+    .dark-mode{background:#1e1e1e;color:#fff;}
+    .dark-mode input,.dark-mode textarea{background:#3b3b3b;color:#fff;border:1px solid #666;}
+    .dark-mode .slider::before{color:#1e1e1e;}
+  </style>
+</head>
+<body>
+  <div class="settings-bar">
+    <label><input type="checkbox" id="darkToggle"><span class="slider"></span></label>
+    <select id="fontSizeSelect">
+      <option value="14px">Default</option>
+      <option value="16px">Large</option>
+      <option value="12px">Small</option>
+    </select>
+    <label><input type="checkbox" id="confirmToggle">Confirm</label>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <div class="container">
+    <h1>Submit Dissertation</h1>
+    <input type="text" id="first" placeholder="First Name">
+    <input type="text" id="last" placeholder="Last Name">
+    <input type="file" id="pdfFile" accept=".pdf">
+    <textarea id="notes" rows="4" placeholder="Notes (optional)"></textarea>
+    <button id="submitBtn">📤 Submit</button>
+    <div id="alert" style="margin-top:1rem;color:green;display:none;">Submitted successfully!</div>
+  </div>
+
+  <script>
+    // settings persistence
+    const darkToggle=document.getElementById('darkToggle'),
+          fontSelect=document.getElementById('fontSizeSelect'),
+          confirmToggle=document.getElementById('confirmToggle');
+    document.body.classList.toggle('dark-mode',localStorage.getItem('theme')==='dark');
+    darkToggle.checked=localStorage.getItem('theme')==='dark';
+    fontSelect.value=localStorage.getItem('fontSize')||'14px';
+    document.documentElement.style.fontSize=fontSelect.value;
+    confirmToggle.checked=localStorage.getItem('confirmOn')!=='false';
+    darkToggle.onchange=_=>{
+      document.body.classList.toggle('dark-mode',darkToggle.checked);
+      localStorage.setItem('theme',darkToggle.checked?'dark':'light');
+    };
+    fontSelect.onchange=_=>{
+      document.documentElement.style.fontSize=fontSelect.value;
+      localStorage.setItem('fontSize',fontSelect.value);
+    };
+    confirmToggle.onchange=_=>localStorage.setItem('confirmOn',confirmToggle.checked);
+
+    // role guard
+    const user=atob(sessionStorage.getItem('authUser')||''),exp=+sessionStorage.getItem('expiresAt')||0;
+    if(user!=='student'||Date.now()>exp){alert('Unauthorized');location.href='login.html';}
+
+    // submission logic
+    const btn=document.getElementById('submitBtn'),alertBox=document.getElementById('alert');
+    btn.onclick=_=>{
+      const f=document.getElementById('first').value.trim(),
+            l=document.getElementById('last').value.trim(),
+            pdf=document.getElementById('pdfFile').files[0];
+      if(!f||!l||!pdf)return alert('Fill all');
+      if(confirmToggle.checked&&!confirm('Submit now?'))return;
+      const key=`submissions_${user}`,arr=JSON.parse(localStorage.getItem(key)||'[]');
+      const now=Date.now(),limit=4*60*60*1000;
+      const recent=arr.filter(x=>now-x.time<limit);
+      if(recent.length>=2)return alert('Limit 2 per 4h');
+      const r=new FileReader();
+      r.onload=e=>{
+        arr.push({filename:`${f}_${l}_Stage1.pdf`,content:e.target.result.split(',')[1],notes:document.getElementById('notes').value,time:now,stage:'Stage1',user});
+        localStorage.setItem(key,JSON.stringify(arr));
+        // broadcast to global submissions
+        const all=JSON.parse(localStorage.getItem('submissions')||'[]');
+        all.push(arr[arr.length-1]); localStorage.setItem('submissions',JSON.stringify(all));
+        alertBox.style.display='block';
+        setTimeout(()=>alertBox.style.display='none',10000);
+        document.getElementById('first').value='';
+        document.getElementById('last').value='';
+        document.getElementById('pdfFile').value='';
+        document.getElementById('notes').value='';
+      };
+      r.readAsDataURL(pdf);
+    };
+    function logout(){sessionStorage.clear();location.href='login.html';}
+  </script>
+</body>
+</html>

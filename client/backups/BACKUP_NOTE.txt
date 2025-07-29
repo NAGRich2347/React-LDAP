@@ -1,0 +1,42 @@
+BACKUP INFORMATION
+==================
+
+File Backed Up: StudentSubmit.js
+Backup Location: client/backups/StudentSubmit.js.backup
+Date: $(Get-Date)
+
+ORIGINAL SUBMISSION LIMIT SETTINGS:
+===================================
+Location: client/src/components/StudentSubmit.js
+Lines: 374-377
+
+Original Code:
+const now = Date.now(), limit = 4 * 60 * 60 * 1000; // 4 hour limit in milliseconds
+const recent = arr.filter(x => now - x.time < limit); // Count recent submissions
+if (recent.length >= 2) {
+  window.alert('Limit 2 per 4h'); // Enforce 2 submissions per 4 hours
+  return;
+}
+
+LIMIT DETAILS:
+- Maximum submissions: 2 per user
+- Time window: 4 hours (4 * 60 * 60 * 1000 milliseconds)
+- Applied to: All users (including administrators)
+
+CHANGES MADE:
+=============
+- Modified the limit check to bypass restrictions for administrators
+- Administrators can now submit unlimited documents
+- Students still have the 2 per 4h limit
+
+TO RESTORE ORIGINAL LIMITS:
+===========================
+1. Copy the backup file back: copy backups\StudentSubmit.js.backup src\components\StudentSubmit.js
+2. Or manually restore the original limit code in lines 374-377
+
+TO MODIFY LIMITS:
+=================
+Edit the following values in StudentSubmit.js:
+- Line 374: Change the time limit (currently 4 hours)
+- Line 375: Change the submission count (currently 2)
+- Line 377: Update the alert message 

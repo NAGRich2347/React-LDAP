@@ -1,0 +1,153 @@
+<!-- librarian-review.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Librarian Review</title>
+  <link href="https://fonts.cdnfonts.com/css/bentonsans" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;}
+    body{margin:0;font-family:'BentonSans Book';display:flex;height:100vh;
+      overflow:hidden;background:#f1f1f1;color:#201436;transition:background .3s,color .3s;}
+    .settings-bar{position:fixed;top:15px;right:20px;display:flex;gap:1rem;align-items:center;z-index:1000;}
+    .settings-bar select,input[type=checkbox],.settings-bar button{font-family:'BentonSans Book';}
+    .sidebar{position:absolute;top:0;left:0;bottom:0;width:260px;background:#fff;
+      padding:1rem;overflow-y:auto;transform:translateX(-100%);transition:transform .4s;z-index:900;border-right:1px solid #ccc;}
+    .sidebar.open{transform:translateX(0);}
+    .sidebar input[type=text]{width:100%;padding:.5rem;margin-top:60px;margin-bottom:1rem;border:1px solid #ccc;border-radius:4px;}
+    .submission-item{display:flex;justify-content:space-between;align-items:center;
+      padding:.5rem;margin-bottom:.5rem;background:#fff;border:1px solid #ccc;border-radius:4px;cursor:pointer;font-size:1rem;}
+    .submission-item:hover{background:#eaeaea;}
+    .main{flex:1;margin-left:0;padding:2rem;transition:margin-left .4s;overflow-y:auto;}
+    .sidebar.open~.main{margin-left:260px;}
+    .hamburger{position:fixed;top:15px;left:15px;display:flex;flex-direction:column;
+      justify-content:space-between;width:30px;height:25px;cursor:pointer;z-index:1000;}
+    .hamburger div{width:100%;height:3px;background:#201436;transition:transform .3s,opacity .3s;}
+    .hamburger.open div:nth-child(1){transform:translateY(11px) rotate(45deg);}
+    .hamburger.open div:nth-child(2){opacity:0;}
+    .hamburger.open div:nth-child(3){transform:translateY(-11px) rotate(-45deg);}
+    h1{font-family:'BentonSans Bold';margin-top:1.5rem;text-align:center;}
+    #pdfViewer{width:90%;height:65vh;border:1px solid #ccc;margin:1.5rem 0;}
+    textarea,input[type=file]{width:90%;padding:.5rem;margin-bottom:1rem;border:1px solid #ccc;border-radius:4px;
+      font-family:'BentonSans Book';transition:background .3s,color .3s;}
+    .upload-btn{background:#4F2683;color:#fff;padding:.75rem 1.5rem;border:none;border-radius:4px;
+      cursor:pointer;transition:background .3s;} .upload-btn:hover{background:#3d1c6a;}
+    .dark-mode{background:#1e1e1e;color:#fff;}
+    .dark-mode .sidebar{background:#2e2e2e;}
+    .dark-mode .submission-item{background:#2e2e2e;color:#fff;}
+    .dark-mode .submission-item:hover{background:#444;}
+    .dark-mode .hamburger div{background:#fff;}
+    .dark-mode textarea,input[type=file]{background:#3b3b3b;color:#fff;border:1px solid #666;}
+  </style>
+</head>
+<body>
+  <div class="settings-bar">
+    <label><input type="checkbox" id="darkToggle"><span class="slider"></span></label>
+    <select id="fontSizeSelect">
+      <option value="14px">Default</option>
+      <option value="16px">Large</option>
+      <option value="12px">Small</option>
+    </select>
+    <label><input type="checkbox" id="confirmToggle">Confirm</label>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <div class="sidebar" id="sidebar">
+    <input type="text" id="searchBox" placeholder="Search…">
+    <div id="submissionList"></div>
+  </div>
+
+  <div class="hamburger" id="hamburger">
+    <div></div><div></div><div></div>
+  </div>
+
+  <div class="main">
+    <h1>Librarian Review</h1>
+    <div id="selectedName" style="font-weight:500;"></div>
+    <iframe id="pdfViewer"></iframe>
+    <textarea id="notesBox" placeholder="Your notes…"></textarea>
+    <input type="file" id="notesUpload" accept=".txt,.pdf">
+    <button class="upload-btn" id="sendBtn">📤 Send to Reviewer</button>
+  </div>
+
+  <script>
+    // Settings
+    const darkToggle=document.getElementById('darkToggle'),
+          fontSelect=document.getElementById('fontSizeSelect'),
+          confirmToggle=document.getElementById('confirmToggle');
+    document.body.classList.toggle('dark-mode',localStorage.getItem('theme')==='dark');
+    darkToggle.checked=localStorage.getItem('theme')==='dark';
+    fontSelect.value=localStorage.getItem('fontSize')||'14px';
+    document.documentElement.style.fontSize=fontSelect.value;
+    confirmToggle.checked=localStorage.getItem('confirmOn')!=='false';
+    darkToggle.onchange=_=>{
+      document.body.classList.toggle('dark-mode',darkToggle.checked);
+      localStorage.setItem('theme',darkToggle.checked?'dark':'light');
+    };
+    fontSelect.onchange=_=>{
+      document.documentElement.style.fontSize=fontSelect.value;
+      localStorage.setItem('fontSize',fontSelect.value);
+    };
+    confirmToggle.onchange=_=>localStorage.setItem('confirmOn',confirmToggle.checked);
+
+    // Auth guard
+    const user=atob(sessionStorage.getItem('authUser')||''),exp=+sessionStorage.getItem('expiresAt')||0;
+    if(user!=='librarian'||Date.now()>exp){alert('Unauthorized');location.href='login.html';}
+
+    // Sidebar toggle
+    const sidebar=document.getElementById('sidebar'),
+          ham=document.getElementById('hamburger');
+    ham.onclick=_=>{
+      sidebar.classList.toggle('open');
+      ham.classList.toggle('open');
+    };
+
+    // Render list
+    let subs=JSON.parse(localStorage.getItem('submissions')||'[]'),
+        receipts=JSON.parse(localStorage.getItem('receipts')||'{}'),
+        sel=null;
+    const listEl=document.getElementById('submissionList'),
+          searchBox=document.getElementById('searchBox'),
+          pdfViewer=document.getElementById('pdfViewer'),
+          selectedNameEl=document.getElementById('selectedName'),
+          sendBtn=document.getElementById('sendBtn');
+    function renderList(filter=''){
+      listEl.innerHTML='';
+      subs.filter(s=>s.stage==='Stage1'&&(!filter||s.filename.toLowerCase().includes(filter)))
+         .forEach(s=>{
+        const div=document.createElement('div');
+        div.className='submission-item';
+        const seen=receipts[s.filename];
+        div.innerHTML=`<span>${s.filename}</span><span>${seen?'✅':'⚠️'}</span>`;
+        div.onclick=_=>{
+          if(confirmToggle.checked&&!confirm('Open submission?'))return;
+          receipts[s.filename]=true;
+          localStorage.setItem('receipts',JSON.stringify(receipts));
+          div.querySelector('span:last-child').textContent='✅';
+          sel=s;
+          selectedNameEl.textContent=s.filename;
+          const blob=new Blob([Uint8Array.from(atob(s.content),c=>c.charCodeAt(0))],{type:'application/pdf'});
+          pdfViewer.src=URL.createObjectURL(blob);
+        };
+        listEl.appendChild(div);
+      });
+    }
+    searchBox.oninput=e=>renderList(e.target.value);
+    renderList();
+
+    // Send to reviewer
+    sendBtn.onclick=_=>{
+      if(!sel)return alert('Select one');
+      if(confirmToggle.checked&&!confirm('Send to reviewer?'))return;
+      subs=subs.filter(x=>x!==sel); // remove after send
+      sel.stage='Stage2';sel.time=Date.now();
+      subs.push(sel);
+      localStorage.setItem('submissions',JSON.stringify(subs));
+      alert('Sent to Reviewer');
+      renderList();
+    };
+
+    function logout(){sessionStorage.clear();location.href='login.html';}
+  </script>
+</body>
+</html>

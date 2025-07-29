@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login</title>
+  <link href="https://fonts.cdnfonts.com/css/bentonsans" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'BentonSans Book', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f1f1f1;
+    }
+    .login-container {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      width: 320px;
+    }
+    h2 {
+      font-family: 'BentonSans Bold';
+      margin-bottom: 1rem;
+      color: #201436;
+      text-align: center;
+    }
+    .login-container input {
+      width: 100%;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    .login-container button {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: #4F2683;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-family: 'BentonSans Book';
+    }
+    .login-container button:hover {
+      background-color: #3d1c6a;
+    }
+    .error {
+      color: red;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2>Sign In</h2>
+    <div id="errorMsg" class="error" style="display:none;"></div>
+    <form id="loginForm">
+      <input id="username" type="text" placeholder="Username" required />
+      <input id="password" type="password" placeholder="Password" required />
+      <button type="submit">Log In</button>
+    </form>
+  </div>
+
+  <script>
+    // Map roles to their landing pages
+    const roleToPage = {
+      student: 'student-submit.html',
+      librarian: 'librarian-review.html',
+      reviewer: 'final-approval.html',
+      admin: 'admin-dashboard.html'
+    };
+
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const errorMsg = document.getElementById('errorMsg');
+
+      try {
+        // Fetch user credentials from backend endpoint or fallback to static list
+        async function fetchUsers() {
+          try {
+            const resp = await fetch('/api/users');
+            if (!resp.ok) throw new Error('API unavailable');
+            return await resp.json();
+          } catch {
+            // Fallback list for development
+            return [
+              { username: 'student1', password: 'password', role: 'student' },
+              { username: 'student2', password: 'password', role: 'student' },
+              { username: 'student3', password: 'password', role: 'student' },
+              { username: 'student4', password: 'password', role: 'student' },
+              { username: 'librarian1', password: 'password', role: 'librarian' },
+              { username: 'librarian2', password: 'password', role: 'librarian' },
+              { username: 'reviewer1', password: 'password', role: 'reviewer' },
+              { username: 'reviewer2', password: 'password', role: 'reviewer' },
+              { username: 'admin1', password: 'password', role: 'admin' }
+            ];
+          }
+        }
+
+        const users = await fetchUsers();
+        const user = users.find(u => u.username === username && u.password === password);
+        if (!user) {
+          errorMsg.textContent = 'Invalid username or password.';
+          errorMsg.style.display = 'block';
+          return;
+        }
+
+        // Store session data
+        sessionStorage.setItem('authUser', btoa(user.username));
+        sessionStorage.setItem('authRole', btoa(user.role));
+        // Expires in 15 minutes
+        sessionStorage.setItem('expiresAt', (Date.now() + 15 * 60 * 1000).toString());
+
+        // Redirect to the appropriate page
+        window.location.href = roleToPage[user.role] || 'login.html';
+
+      } catch (err) {
+        console.error('Login error:', err);
+        errorMsg.textContent = 'An error occurred. Please try again later.';
+        errorMsg.style.display = 'block';
+      }
+    });
+
+    // Session expiration handler
+    setTimeout(() => {
+      sessionStorage.removeItem('authUser');
+      sessionStorage.removeItem('authRole');
+      sessionStorage.removeItem('expiresAt');
+      alert('Session expired. Please log in again.');
+      window.location.href = 'login.html';
+    }, 15 * 60 * 1000); // 15 minutes
+  </script>
+</body>
+</html>

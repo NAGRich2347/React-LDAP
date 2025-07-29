@@ -1,0 +1,147 @@
+✔️now make the whole thing blocked by a login portal on the main page. i will need to enter all these in a subfolder that is held behind a login page then, no? 
+
+✔️the librarian view should have a window that shows the document as a preview. the google chrome pdf form submission. make it downloadable.
+
+now let me see what files are being transferred between all parties as an administrator. add a separate column/row for "student, librarian, final... etc" so I can see who is sending what and who each recipient is for ease of access and readability at a glance 
+
+ok but the admin panel should be able to see every event. like a FTP server's logs essentially, (to, from, time and date)
+
+there should also be a "done" status added onto each of the user's counterparts in each part of the submission and finalization process that can be viewed by anybody with administrator credentials
+
+
+
+✔️the librarian's pdf viewer is broken. i can not download the pdf on the librarian's view.
+
+the final reviewer should have a similar page to the librarian's but it should show the student's initial submission, as well as the librarian's modifications in iFrames.
+
+##
+the librarian pdf viewer is broken again - does not show anything
+submit button doesnt work either
+
+the final approval (reviewer role) does not have a working pdf file as well. is it because there is already one in queue?
+dissallow duplicate submissions by checking file names and other meta data as a boolean?
+##
+
+no admin clear queue.
+if something is missing in the admin page, hilight it as red, and send an email out to the user requiring that their data must be sent
+
+better layout for submission files in admin view. make the admin view and the review view the same? or slightly different. 
+
+^^^***
+ADMIN CAN VIEW ALL, REVIEWERS CAN ONLY REVIEW THEIR SPECIFICALLY *ASSIGNED TO ME* documents?
+
+
+
+
+
+
+
+To control visibility of log entries per user role (e.g., student, librarian, reviewer, admin), the workflowLog array entries now support a visibleTo field:
+
+✅ Visibility Implementation Summary
+Each log entry should now include this format:
+
+js
+Copy
+Edit
+visibleTo: ['admin', 'librarian']
+👥 Suggested Role Access Tiers
+Role	visibleTo Should Include…	Can See...
+student	(no log access — no rendering needed)	None
+librarian	'librarian', 'admin'	Only stages before final review
+reviewer	'reviewer', 'admin'	Own actions + below
+admin	All entries (['admin'] or any/all roles)	Full audit log
+
+🧠 In Your Page JavaScript:
+For pages like librarian-review.html, filter log like this:
+
+js
+Copy
+Edit
+const log = JSON.parse(localStorage.getItem('workflowLog') || '[]');
+const visibleLog = log.filter(entry =>
+  !entry.visibleTo || entry.visibleTo.includes('librarian')
+);
+Then render visibleLog instead of log.
+
+Would you like me to apply this visibility logic to:
+
+librarian-review.html
+
+final-approval.html (already done)
+
+admin-dashboard.html (no filter needed)
+?
+
+Let me know and I’ll update those files for you.
+
+do the download button change for librarian and reviewer
+make a dark mode in a click
+
+MAKE THE LOGIN AUTOMATICALLY REDIRECT THE USER BASED ON THEIR RESPECTIVE CREDENTIALS TO THEIR OWN SITE (EACH USER WILL HAVE A PRE-SAVED ROLE IN THE CHAIN)
+
+
+I NEEEEEEDDD an intro screen (proper page for each user) that displays their username and the date and time or something to that effect once they login, (getting everything ready for you) type thing.
+
+
+
+
+install angular node and some other stuff lol
+
+
+clear forms on client side after entry of documents/items
+
+
+
+
+ok now make those changes we made on the librarian's page, the same as on the student's page. 
+
+
+
+
+
+
+
+ok i need to not have to refresh the page every time there's a new document on the reviewer page. there should also be an email checkbox type thing with "read receipts" per say that will remove the caution mark if there's been something uploaded that hasn't been clicked on yet. if it has been read, it should have a check mark emoji next to it. the check mark will only appear if the person who is reviewing has scrolled to the bottom of that page, or clicked a checkmark that you should create on the page. that check mark should not go away on refresh or log out and log in. reviewers and librarians are strongly encouraged to submit onto the next stage after they have reviewed each one after they are done their part in the process. also make the final approval site uniform to the library's site with the side panel so there is a search bar and keeping the same feel along with the read receipts system like i mentioned before. student's submission forms should clear on refresh, but the reviewer and the librarian's notes pages should keep after a refresh with the session id. a session should expire after 15 minutes of no keyboard or mouse activity, and should prompt a user to re-login. also make sure there is a notes section like the student submission page that sends a txt file alongside the pdf attachment. (it should be spaced out and listed underneath the item on the side panel and the main screen. rewrite all the scripts to do these please and thank you.
+
+the read receipt didn't stay after a browser refresh. the STUDENT form should clear the text boxes after submission - keep the submission alert on screen for 10 seconds after click. prevent duplicate or overflow of content from the same user after 2 submissions within 4 hours. this should be the same safeguard between the librarian sending submissions to the final reviewer, but with double the tolerance, since it's internal. change the font size for items in the side bar if the title of the document is too long, if not, and if the text size decreases below 12px, make a side scroll wheel for the item's name. the search bar is still clipping on the hamburger icon on open on the librarian and the reviewer pages. i do not want to locally download the item as a reviewed file on submission as any role. when I click the send button, it should only send it. there should be a final "are you sure you want to send this document?" option in the  settings bar which you should make to the right of the toggle light and dark modes. the light and dark modes should be maintained after a page refresh with users session. also make an option in the settings bar (the settings should exist on all pages) to default to an either light or dark theme, or to change the font size. these should also store after a refresh per user. 
+
+the "are you sure" confirmation should be a toggleable setting that can be changed and stored per user and across sessions. some people may want that option, others may not. clear the items from the queue for the librarians and the reviewers after they have been submitted. KEEP THE STATE OF THE CHECKMARKS VERSUS CAUTION MARKS AFTER A REFRESH. where did the additional file attach option go for the librarian page / THE SEARCH BAR IS STILL TOO HIGH AND IS CLIPPING THE HAMBURGER MENU TOGGLER. the ADMIN PAGE IS GONE AND IS NO LONGER WORKING AFTER CORRECT LOGIN. lol. make enter work for form submission. 
+
+
+
+final approval shrunk by over half the code?
+
+ok now why do the librarian's approved documents stay after they have been submitted? change that. and where are the settings across all pages? the admin page looks good, but it does not need a confirm/read receipts checkbox in the top right corner. it could use a properly labeled / the right icon for the light/ dark mode toggle. when each file is submitted to the final reviewer for review by the librarian, the page should refresh, and i expect the document should no longer be there. 
+
+
+
+
+
+
+again, AFTER SUBMIT HAS BEEN PRESSED, refresh the page. the settings should be shown on the top right, that's where the dark mode button should be. I need you to make a separate settings page that is shown as a dropdown menu. this is where the font size, theme, and other settings should show. add an outline to the button that toggles the light or dark theme - the same outline as the rest of the main elements on the page - i can barely see it with the contrast lol. 
+|
+|
+|
+|
+|
+|
+|
+|
+|
+|
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

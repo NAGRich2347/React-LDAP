@@ -1,0 +1,635 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import NotificationSystem from './NotificationSystem';
+import WorkflowProgress from './WorkflowProgress';
+
+/**
+ * StudentSubmit Component - Comprehensive Styling Object
+ * 
+ * This object contains all the styling for the student submission page.
+ * Each style function takes theme parameters (dark/light mode) and returns
+ * appropriate CSS properties for responsive, accessible design.
+ */
+const styles = {
+  // Full-screen background with gradient based on theme
+  body: (dark, fontSize) => ({
+    fontFamily: "'BentonSans Book', sans-serif",
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100vh',
+    width: '100vw',
+    minHeight: 0,
+    minWidth: 0,
+    margin: 0,
+    padding: 0,
+    background: dark
+      ? 'radial-gradient(ellipse at 50% 40%, #231942 0%, #4F2683 80%, #18122b 100%)'
+      : 'radial-gradient(ellipse at 50% 40%, #fff 0%, #e9e6f7 80%, #cfc6e6 100%)',
+    color: dark ? '#e0d6f7' : '#201436',
+    transition: 'background .3s,color .3s',
+    fontSize,
+    boxSizing: 'border-box',
+    overflow: 'hidden',
+    outline: 'none',
+  }),
+  // Settings bar positioned in top-right corner for theme and font controls
+  settingsBar: {
+    position: 'fixed',
+    top: 15,
+    right: 20,
+    display: 'flex',
+    gap: '1rem',
+    zIndex: 1000,
+    alignItems: 'center',
+  },
+  // Dark/light mode toggle slider styling
+  slider: dark => ({
+    position: 'relative',
+    width: 50,
+    height: 24,
+    borderRadius: 24,
+    background: dark ? '#4F2683' : '#e9e6f7',
+    border: '1.5px solid #bbaed6',
+    transition: '.4s',
+    display: 'inline-block',
+    marginLeft: 4,
+    marginRight: 4,
+    boxSizing: 'border-box',
+  }),
+  // Slider button (sun/moon icon) styling with smooth transitions
+  sliderBefore: dark => ({
+    content: dark ? '"🌙"' : '"☀"',
+    position: 'absolute',
+    width: 18,
+    height: 18,
+    left: dark ? 29 : 3,
+    bottom: 3,
+    background: dark ? '#231942' : '#fff',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: '.4s',
+    color: dark ? '#e0d6f7' : '#4F2683',
+    fontSize: 14,
+    textAlign: 'center',
+    border: '1.5px solid #bbaed6',
+    boxSizing: 'border-box',
+  }),
+  // Main form container with glass-morphism effect
+  container: dark => ({
+    background: dark ? 'rgba(36, 18, 54, 0.98)' : 'rgba(255,255,255,0.98)',
+    padding: '2.5rem 2rem 2rem 2rem',
+    borderRadius: '18px',
+    boxShadow: dark
+      ? '0 8px 40px 0 rgba(79,38,131,0.55), 0 1.5px 8px 0 rgba(0,0,0,0.18)'
+      : '0 4px 32px rgba(80,40,130,0.10)',
+    width: '100%',
+    maxWidth: 500,
+    minWidth: 0,
+    margin: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    animation: 'fadeIn .7s',
+    transition: 'background .3s,color .3s',
+    border: 'none',
+    outline: 'none',
+    boxSizing: 'border-box',
+    overflow: 'visible',
+    textAlign: 'center',
+  }),
+  // Main heading styling with bold font and proper spacing
+  h1: dark => ({
+    fontFamily: "'BentonSans Bold'",
+    color: dark ? '#e0d6f7' : '#201436',
+    fontSize: '2rem',
+    marginBottom: '1.5rem',
+    letterSpacing: '-1px',
+    transition: 'color .3s',
+  }),
+  // Text input styling with error state support
+  input: (dark, hasError) => ({
+    width: '100%',
+    padding: '.85rem 1rem',
+    margin: '.5rem 0',
+    border: hasError ? (dark ? '2px solid #a259e6' : '2px solid #a259e6') : (dark ? '1.5px solid #4F2683' : '1.5px solid #bbaed6'),
+    borderRadius: 6,
+    fontFamily: "'BentonSans Book'",
+    fontSize: '1.08rem',
+    background: dark ? '#2a1a3a' : '#f9f9f9',
+    color: dark ? '#e0d6f7' : '#201436',
+    transition: 'border .2s, background .3s, color .3s',
+    boxSizing: 'border-box',
+    outline: 'none',
+  }),
+  // File input styling with consistent theme support
+  fileInput: dark => ({
+    width: '100%',
+    padding: '.85rem 1rem',
+    margin: '.5rem 0',
+    border: dark ? '1.5px solid #4F2683' : '1.5px solid #bbaed6',
+    borderRadius: 6,
+    fontFamily: "'BentonSans Book'",
+    fontSize: '1.08rem',
+    background: dark ? '#2a1a3a' : '#f9f9f9',
+    color: dark ? '#e0d6f7' : '#201436',
+    transition: 'border .2s, background .3s, color .3s',
+    boxSizing: 'border-box',
+    outline: 'none',
+    cursor: 'pointer',
+  }),
+  // Textarea styling for notes/comments
+  textarea: dark => ({
+    width: '100%',
+    padding: '.85rem 1rem',
+    margin: '.5rem 0',
+    border: dark ? '1.5px solid #4F2683' : '1.5px solid #bbaed6',
+    borderRadius: 6,
+    fontFamily: "'BentonSans Book'",
+    fontSize: '1.08rem',
+    background: dark ? '#2a1a3a' : '#f9f9f9',
+    color: dark ? '#e0d6f7' : '#201436',
+    transition: 'border .2s, background .3s, color .3s',
+    boxSizing: 'border-box',
+    outline: 'none',
+  }),
+  // Dropdown select styling with custom appearance
+  select: dark => ({
+    padding: '0.4rem 1.2rem 0.4rem 0.6rem',
+    borderRadius: 6,
+    border: '1.5px solid #bbaed6',
+    background: dark ? '#2a1a3a' : '#fff',
+    color: dark ? '#e0d6f7' : '#201436',
+    fontFamily: "'BentonSans Book'",
+    fontSize: '1rem',
+    outline: 'none',
+    transition: 'background .3s,color .3s',
+    boxSizing: 'border-box',
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    MozAppearance: 'none',
+    cursor: 'pointer',
+    boxShadow: 'none',
+  }),
+  // Button styling with hover effects and loading states
+  button: (dark, hover) => ({
+    padding: '.85rem 1.5rem',
+    background: hover ? (dark ? '#3d1c6a' : '#bbaed6') : (dark ? '#4F2683' : '#a259e6'),
+    color: dark ? '#e0d6f7' : '#fff',
+    border: 'none',
+    borderRadius: 6,
+    cursor: 'pointer',
+    fontFamily: "'BentonSans Book'",
+    fontWeight: 600,
+    fontSize: '1.1rem',
+    marginTop: 8,
+    boxShadow: dark
+      ? '0 2px 8px rgba(79,38,131,0.25)'
+      : '0 2px 8px rgba(80,40,130,0.08)',
+    transition: 'background .3s',
+    outline: 'none',
+  }),
+  // Success/alert message styling
+  alert: dark => ({
+    marginTop: '1rem',
+    color: dark ? '#b6f7b6' : 'green',
+    display: 'block',
+    fontWeight: 500,
+    fontSize: '1rem',
+    letterSpacing: '-0.5px',
+    minHeight: 24,
+    textAlign: 'center',
+    transition: 'color .3s',
+  }),
+  // CSS animations for smooth page transitions
+  '@keyframes fadeIn': {
+    from: { opacity: 0, transform: 'translateY(30px)' },
+    to: { opacity: 1, transform: 'none' },
+  },
+};
+
+/**
+ * StudentSubmit Component
+ * 
+ * This component handles the student PDF submission workflow. Students can:
+ * - Enter their first and last name
+ * - Upload a PDF file (with validation)
+ * - Add optional notes
+ * - Submit their work for review
+ * 
+ * Features:
+ * - Dark/light theme support
+ * - File validation (type, size)
+ * - Input sanitization for security
+ * - Responsive design
+ * - Accessibility features
+ * - Notification system integration
+ */
+export default function StudentSubmit() {
+  // Form state management
+  const [first, setFirst] = useState(''); // Student's first name
+  const [last, setLast] = useState(''); // Student's last name
+  const [file, setFile] = useState(null); // Selected PDF file
+  const [notes, setNotes] = useState(''); // Optional notes/comments
+  const [alert, setAlert] = useState(''); // Success/error messages
+  const [dark, setDark] = useState(localStorage.getItem('theme') === 'dark'); // Theme preference
+  const [fontSize, setFontSize] = useState(localStorage.getItem('fontSize') || '14px'); // Font size preference
+  const [confirmOn, setConfirmOn] = useState(localStorage.getItem('confirmOn') !== 'false'); // Confirmation dialog preference
+  const [hover, setHover] = useState(false); // Button hover state for visual feedback
+  const [showProgress, setShowProgress] = useState(false); // Show progress after submission
+  const [submittedDocument, setSubmittedDocument] = useState(null); // Store submitted document info
+  const navigate = useNavigate(); // React Router navigation hook
+
+  // Access control: verify user is authenticated as a student
+  useEffect(() => {
+    const role = atob(sessionStorage.getItem('authRole') || ''); // Decode role from base64
+    const exp = +sessionStorage.getItem('expiresAt') || 0; // Get session expiration time
+    if (role !== 'student' || Date.now() > exp) {
+      window.alert('Unauthorized'); // Show error if not student or session expired
+      navigate('/login'); // Redirect to login page
+    }
+  }, [navigate]);
+
+  // Persist user preferences to localStorage and apply to document
+  useEffect(() => {
+    document.documentElement.style.fontSize = fontSize; // Apply font size to document
+    localStorage.setItem('theme', dark ? 'dark' : 'light'); // Save theme preference
+    localStorage.setItem('fontSize', fontSize); // Save font size preference
+    localStorage.setItem('confirmOn', confirmOn); // Save confirmation dialog preference
+  }, [dark, fontSize, confirmOn]);
+
+  /**
+   * Sanitize input to prevent XSS (Cross-Site Scripting) attacks
+   * 
+   * This function removes potentially dangerous HTML tags, attributes, and JavaScript
+   * from user input to ensure security when displaying content.
+   * 
+   * @param {string} input - The user input to sanitize
+   * @returns {string} - Sanitized input with dangerous content removed
+   */
+  const sanitizeInput = (input) => {
+    if (typeof input !== 'string') return ''; // Return empty string for non-string inputs
+    
+    // Remove potentially dangerous HTML tags and attributes
+    return input
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
+      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '') // Remove iframe tags
+      .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '') // Remove object tags
+      .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '') // Remove embed tags
+      .replace(/<form\b[^<]*(?:(?!<\/form>)<[^<]*)*<\/form>/gi, '') // Remove form tags
+      .replace(/<input\b[^>]*>/gi, '') // Remove input tags
+      .replace(/<textarea\b[^<]*(?:(?!<\/textarea>)<[^<]*)*<\/textarea>/gi, '') // Remove textarea tags
+      .replace(/<select\b[^<]*(?:(?!<\/select>)<[^<]*)*<\/select>/gi, '') // Remove select tags
+      .replace(/<button\b[^<]*(?:(?!<\/button>)<[^<]*)*<\/button>/gi, '') // Remove button tags
+      .replace(/<link\b[^>]*>/gi, '') // Remove link tags
+      .replace(/<meta\b[^>]*>/gi, '') // Remove meta tags
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '') // Remove style tags
+      .replace(/javascript:/gi, '') // Remove javascript: protocol
+      .replace(/on\w+\s*=/gi, '') // Remove event handlers (onclick, onload, etc.)
+      .replace(/data:/gi, '') // Remove data: protocol
+      .replace(/vbscript:/gi, '') // Remove vbscript: protocol
+      .replace(/expression\s*\(/gi, '') // Remove CSS expressions
+      .replace(/eval\s*\(/gi, '') // Remove eval() calls
+      .replace(/<[^>]*>/g, '') // Remove any remaining HTML tags
+      .trim(); // Remove leading/trailing whitespace
+  };
+
+  /**
+   * Validate file size to prevent oversized uploads
+   * 
+   * @param {File} file - The file to validate
+   * @param {number} maxSizeMB - Maximum file size in megabytes (default: 10MB)
+   * @returns {boolean} - True if file size is acceptable, false otherwise
+   */
+  const validateFileSize = (file, maxSizeMB = 10) => {
+    const maxSizeBytes = maxSizeMB * 1024 * 1024; // Convert MB to bytes
+    if (file.size > maxSizeBytes) {
+      window.alert(`File size must be under ${maxSizeMB}MB. Current file size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
+      return false;
+    }
+    return true;
+  };
+
+  /**
+   * Validate file type to ensure only PDFs are uploaded
+   * 
+   * @param {File} file - The file to validate
+   * @returns {boolean} - True if file is a PDF, false otherwise
+   */
+  const validateFileType = (file) => {
+    if (file.type !== 'application/pdf') {
+      window.alert('Please select a PDF file');
+      return false;
+    }
+    return true;
+  };
+
+  /**
+   * Utility to auto-rename the uploaded file to the required format
+   * @param {string} first - Student's first name
+   * @param {string} last - Student's last name
+   * @param {string} stage - Stage string (e.g., 'Stage1')
+   * @returns {string} - Properly formatted filename
+   */
+  const autoRenameFile = (first, last, stage) => {
+    return `${first}_${last}_${stage}.pdf`;
+  };
+
+  /**
+   * Handle form submission for student PDF uploads
+   * 
+   * This function validates the form data, checks submission limits,
+   * converts the file to base64 for storage, and saves the submission
+   * to both user-specific and global localStorage.
+   */
+  const handleSubmit = async () => {
+    // Validate that all required fields are filled
+    if (!first.trim() || !last.trim() || !file) {
+      window.alert('Fill all');
+      return;
+    }
+    
+    // Validate file type (must be PDF)
+    if (!validateFileType(file)) {
+      return;
+    }
+    
+    // Validate file size (max 10MB)
+    if (!validateFileSize(file)) {
+      return;
+    }
+    
+    // Auto-rename the file to the required format
+    const expectedFilename = autoRenameFile(first.trim(), last.trim(), 'Stage1');
+    const renamedFile = new File([file], expectedFilename, { type: 'application/pdf' });
+    
+    // Show confirmation dialog if enabled
+    if (confirmOn && !window.confirm('Submit now?')) return;
+    
+    // Get current user and check submission limits
+    const user = atob(sessionStorage.getItem('authUser') || ''); // Decode username
+    const key = `submissions_${user}`; // User-specific storage key
+    const arr = JSON.parse(localStorage.getItem(key) || '[]'); // Get user's submissions
+    const now = Date.now(), limit = 4 * 60 * 60 * 1000; // 4 hour limit in milliseconds
+    const recent = arr.filter(x => now - x.time < limit); // Count recent submissions
+    if (recent.length >= 2) {
+      window.alert('Limit 2 per 4h'); // Enforce 2 submissions per 4 hours
+      return;
+    }
+    
+    // Convert File object to base64 string for localStorage storage
+    const base64 = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]); // Extract base64 data
+      reader.readAsDataURL(renamedFile);
+    });
+    
+    // Trim notes and treat as empty if only spaces
+    const trimmedNotes = notes.trim();
+    // Create submission object with both File and base64 content
+    const submission = {
+      filename: expectedFilename,
+      file: renamedFile, // Use renamed File object
+      content: base64, // Store base64 for localStorage persistence
+      notes: trimmedNotes ? sanitizeInput(trimmedNotes) : '', // Sanitize notes, treat empty if only spaces
+      time: now,
+      stage: 'Stage1',
+      user
+    };
+    
+    // Save to user-specific storage
+    arr.push(submission);
+    localStorage.setItem(key, JSON.stringify(arr));
+    
+    // Save to global submissions list for reviewers to access
+    // Note: File objects cannot be serialized to JSON, so we store base64 only
+    const all = JSON.parse(localStorage.getItem('submissions') || '[]');
+    const serializableSubmission = {
+      ...submission,
+      file: null, // Remove File object for JSON serialization
+      content: base64 // Keep base64 content for storage
+    };
+    all.push(serializableSubmission);
+    localStorage.setItem('submissions', JSON.stringify(all));
+    
+    // Store submitted document info for progress display
+    setSubmittedDocument({
+      filename: filename,
+      stage: 'Stage0',
+      status: 'Pending'
+    });
+    
+    // Show progress view
+    setShowProgress(true);
+    
+    // Show success message and reset form
+    setAlert('Submitted successfully!');
+    setTimeout(() => setAlert(''), 10000); // Clear alert after 10 seconds
+    setFirst(''); // Clear first name
+    setLast(''); // Clear last name
+    setFile(null); // Clear file selection
+    setNotes(''); // Clear notes
+  };
+
+  /**
+   * Handle user logout by clearing session data and redirecting to login
+   */
+  const handleLogout = () => {
+    sessionStorage.clear(); // Clear all session storage (auth data, etc.)
+    navigate('/login'); // Redirect to login page
+  };
+
+  /**
+   * Handle opening document from notification system
+   * 
+   * For students, this shows a message when their document has been
+   * returned by a reviewer for corrections.
+   * 
+   * @param {string} filename - The name of the returned document
+   */
+  const handleOpenDocumentFromNotification = (filename) => {
+    // For students, we could show a message or navigate to a submissions view
+    window.alert(`Document ${filename} has been returned to you. Please review and resubmit if needed.`);
+  };
+
+  return (
+    <div style={{ ...styles.body(dark, fontSize) }}>
+      <NotificationSystem 
+        dark={dark} 
+        onOpenDocument={handleOpenDocumentFromNotification}
+      />
+      {/* Global style to force fullscreen, no scrollbars, no white edges */}
+      <style>{`
+        html, body, #root {
+          width: 100vw !important;
+          height: 100vh !important;
+          min-width: 0 !important;
+          min-height: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: hidden !important;
+          background: none !important;
+          box-sizing: border-box !important;
+        }
+        body::-webkit-scrollbar, html::-webkit-scrollbar {
+          display: none !important;
+        }
+        input[type='file']::file-selector-button {
+          padding: 0.4rem 1.2rem;
+          border-radius: 6px;
+          border: 1.5px solid #bbaed6;
+          background: ${dark ? '#2a1a3a' : '#fff'};
+          color: ${dark ? '#e0d6f7' : '#201436'};
+          font-family: 'BentonSans Book', sans-serif;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: background .3s, color .3s, border-color .3s;
+        }
+        input[type='file']::-webkit-file-upload-button {
+          padding: 0.4rem 1.2rem;
+          border-radius: 6px;
+          border: 1.5px solid #bbaed6;
+          background: ${dark ? '#2a1a3a' : '#fff'};
+          color: ${dark ? '#e0d6f7' : '#201436'};
+          font-family: 'BentonSans Book', sans-serif;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: background .3s, color .3s, border-color .3s;
+        }
+      `}</style>
+      {/* Settings Bar */}
+      <div style={styles.settingsBar}>
+        <label htmlFor="darkModeToggle" style={{ display: 'flex', alignItems: 'center' }}>
+          <input
+            id="darkModeToggle"
+            name="darkMode"
+            type="checkbox"
+            checked={dark}
+            onChange={e => setDark(e.target.checked)}
+            style={{ display: 'none' }}
+          />
+          <span style={styles.slider(dark)}>
+            <span style={styles.sliderBefore(dark)}>{dark ? '🌙' : '☀'}</span>
+          </span>
+        </label>
+        <label htmlFor="fontSizeSelect" style={{ display: 'none' }}>Font Size</label>
+        <select
+          id="fontSizeSelect"
+          name="fontSize"
+          value={fontSize}
+          onChange={e => setFontSize(e.target.value)}
+          style={styles.select(dark)}
+        >
+          <option value="14px">Default</option>
+          <option value="16px">Large</option>
+          <option value="12px">Small</option>
+        </select>
+        <label htmlFor="confirmToggle" style={{ fontFamily: "'BentonSans Book'" }}>
+          <input
+            id="confirmToggle"
+            name="confirmOn"
+            type="checkbox"
+            checked={confirmOn}
+            onChange={e => setConfirmOn(e.target.checked)}
+          />
+          Confirm
+        </label>
+        <button onClick={handleLogout} style={styles.button(dark, hover)} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>Logout</button>
+      </div>
+      {/* Main Form or Progress View */}
+      <div style={styles.container(dark)}>
+        {showProgress && submittedDocument ? (
+          <>
+            <h1 style={styles.h1(dark)}>Document Submitted!</h1>
+            <WorkflowProgress 
+              currentStage={submittedDocument.stage}
+              status={submittedDocument.status}
+              dark={dark}
+              showTimeline={true}
+            />
+            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+              <button
+                onClick={() => {
+                  setShowProgress(false);
+                  setSubmittedDocument(null);
+                }}
+                style={styles.button(dark, hover)}
+                onMouseEnter={() => setHover(true)}
+                onMouseLeave={() => setHover(false)}
+              >
+                📝 Submit Another Document
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <h1 style={styles.h1(dark)}>Submit Dissertation</h1>
+        <label htmlFor="firstName" style={{ display: 'none' }}>First Name</label>
+        <input
+          id="firstName"
+          name="firstName"
+          type="text"
+          placeholder="First Name"
+          value={first}
+          onChange={e => setFirst(sanitizeInput(e.target.value))}
+          style={styles.input(dark, false)}
+        />
+        <label htmlFor="lastName" style={{ display: 'none' }}>Last Name</label>
+        <input
+          id="lastName"
+          name="lastName"
+          type="text"
+          placeholder="Last Name"
+          value={last}
+          onChange={e => setLast(sanitizeInput(e.target.value))}
+          style={styles.input(dark, false)}
+        />
+        <label htmlFor="pdfFile" style={{ display: 'none' }}>PDF File</label>
+        <input
+          id="pdfFile"
+          name="pdfFile"
+          type="file"
+          accept=".pdf"
+          onChange={e => {
+            const selectedFile = e.target.files[0];
+            if (selectedFile) {
+              if (!validateFileType(selectedFile)) {
+                e.target.value = '';
+                return;
+              }
+              if (!validateFileSize(selectedFile)) {
+                e.target.value = '';
+                return;
+              }
+              setFile(selectedFile);
+            }
+          }}
+          style={styles.fileInput(dark)}
+        />
+        <label htmlFor="notes" style={{ display: 'none' }}>Notes</label>
+        <textarea
+          id="notes"
+          name="notes"
+          rows={4}
+          placeholder="Notes (optional)"
+          value={notes}
+          onChange={e => setNotes(e.target.value)}
+          style={styles.textarea(dark)}
+        />
+        <button
+          onClick={handleSubmit}
+          style={styles.button(dark, hover)}
+          onMouseEnter={() => setHover(true)}
+          onMouseLeave={() => setHover(false)}
+        >
+          📤 Submit
+        </button>
+        {alert && <div style={styles.alert(dark)}>{alert}</div>}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

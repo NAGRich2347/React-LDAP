@@ -1,0 +1,80 @@
+<!-- manual-controls.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Manual Controls</title>
+  <link href="https://fonts.cdnfonts.com/css/bentonsans" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;}
+    body{margin:0;font-family:'BentonSans Book';background:#f1f1f1;color:#201436;
+      display:flex;flex-direction:column;height:100vh;}
+    .settings-bar{position:fixed;top:15px;right:20px;display:flex;gap:1rem;align-items:center;z-index:1000;}
+    .settings-bar select,input[type=checkbox],.settings-bar button{font-family:'BentonSans Book';}
+    .main{margin-top:60px;padding:2rem;overflow:auto;flex:1;}
+    h1{font-family:'BentonSans Bold';text-align:center;}
+    .btn{padding:.75rem 1.5rem;margin:.5rem;background:#4F2683;color:#fff;
+      border:none;border-radius:4px;cursor:pointer;font-family:'BentonSans Book';}
+    .btn:hover{background:#3d1c6a;}
+    .log{margin-top:1rem;padding:1rem;background:#eaeaea;border-radius:4px;font-family:monospace;}
+    .dark-mode{background:#1e1e1e;color:#fff;}
+    .dark-mode .log{background:#333;}
+  </style>
+</head>
+<body>
+  <div class="settings-bar">
+    <label><input type="checkbox" id="darkToggle"><span class="slider"></span></label>
+    <select id="fontSizeSelect">
+      <option value="14px">Default</option>
+      <option value="16px">Large</option>
+      <option value="12px">Small</option>
+    </select>
+    <label><input type="checkbox" id="confirmToggle">Confirm</label>
+    <button onclick="logout()">Logout</button>
+  </div>
+  <div class="main">
+    <h1>Manual Workflow Controls</h1>
+    <button class="btn" onclick="goTo('student-submit.html')">Simulate Student Submission</button>
+    <button class="btn" onclick="goTo('librarian-review.html')">Simulate Librarian Review</button>
+    <button class="btn" onclick="goTo('final-approval.html')">Simulate Final Approval</button>
+    <div class="log" id="log"></div>
+  </div>
+  <script>
+    // Settings
+    const darkToggle=document.getElementById('darkToggle'),
+          fontSelect=document.getElementById('fontSizeSelect'),
+          confirmToggle=document.getElementById('confirmToggle');
+    document.body.classList.toggle('dark-mode',localStorage.getItem('theme')==='dark');
+    darkToggle.checked=localStorage.getItem('theme')==='dark';
+    fontSelect.value=localStorage.getItem('fontSize')||'14px';
+    document.documentElement.style.fontSize=fontSelect.value;
+    confirmToggle.checked=localStorage.getItem('confirmOn')!=='false';
+    darkToggle.onchange=_=>{
+      document.body.classList.toggle('dark-mode',darkToggle.checked);
+      localStorage.setItem('theme',darkToggle.checked?'dark':'light');
+    };
+    fontSelect.onchange=_=>{
+      document.documentElement.style.fontSize=fontSelect.value;
+      localStorage.setItem('fontSize',fontSelect.value);
+    };
+    confirmToggle.onchange=_=>localStorage.setItem('confirmOn',confirmToggle.checked);
+
+    // Auth
+    const user=atob(sessionStorage.getItem('authUser')||''),exp=+sessionStorage.getItem('expiresAt')||0;
+    if(user!=='admin'||Date.now()>exp){alert('Unauthorized');location.href='login.html';}
+
+    // Log
+    const logHistory=JSON.parse(localStorage.getItem('workflowLog')||'[]'),
+          logBox=document.getElementById('log');
+    function addLog(m){logHistory.push(m);localStorage.setItem('workflowLog',JSON.stringify(logHistory));render();}
+    function render(){logBox.textContent=logHistory.join('\n');}
+    render();
+
+    function goTo(p){
+      if(confirmToggle.checked&&!confirm('Go there?'))return;
+      location.href=p;
+    }
+    function logout(){sessionStorage.clear();location.href='login.html';}
+  </script>
+</body>
+</html>

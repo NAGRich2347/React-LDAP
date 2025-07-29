@@ -1,0 +1,78 @@
+<!-- admin-dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <link href="https://fonts.cdnfonts.com/css/bentonsans" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;}
+    body{margin:0;font-family:'BentonSans Book';display:flex;flex-direction:column;
+      background:#f1f1f1;color:#201436;transition:background .3s,color .3s;}
+    .settings-bar{position:fixed;top:15px;right:20px;display:flex;gap:1rem;align-items:center;z-index:1000;}
+    .settings-bar select,label{font-family:'BentonSans Book';}
+    .settings-bar button{padding:.5rem 1rem;border:none;background:#4F2683;color:#fff;border-radius:4px;}
+    .main{margin-top:60px;padding:2rem;overflow:auto;flex:1;}
+    h1{font-family:'BentonSans Bold';text-align:center;}
+    table{width:100%;border-collapse:collapse;margin-top:1rem;}
+    th,td{border:1px solid #ccc;padding:.5rem;text-align:left;}
+    th{background:#eee;}
+    .dark-mode{background:#1e1e1e;color:#fff;}
+    .dark-mode th{background:#2e2e2e;}
+    .dark-mode td, .dark-mode th{border-color:#555;}
+  </style>
+</head>
+<body>
+  <div class="settings-bar">
+    <label><input type="checkbox" id="darkToggle"><span class="slider"></span></label>
+    <select id="fontSizeSelect">
+      <option value="14px">Default</option>
+      <option value="16px">Large</option>
+      <option value="12px">Small</option>
+    </select>
+    <button onclick="logout()">Logout</button>
+  </div>
+  <div class="main">
+    <h1>Administrator Dashboard</h1>
+    <table>
+      <thead><tr><th>Time</th><th>User</th><th>Stage</th><th>Filename</th><th>Notes</th></tr></thead>
+      <tbody id="logBody"></tbody>
+    </table>
+  </div>
+  <script>
+    // Settings
+    const darkToggle=document.getElementById('darkToggle'),
+          fontSelect=document.getElementById('fontSizeSelect');
+    document.body.classList.toggle('dark-mode',localStorage.getItem('theme')==='dark');
+    darkToggle.checked=localStorage.getItem('theme')==='dark';
+    fontSelect.value=localStorage.getItem('fontSize')||'14px';
+    document.documentElement.style.fontSize=fontSelect.value;
+    darkToggle.onchange=_=>{
+      document.body.classList.toggle('dark-mode',darkToggle.checked);
+      localStorage.setItem('theme',darkToggle.checked?'dark':'light');
+    };
+    fontSelect.onchange=_=>{
+      document.documentElement.style.fontSize=fontSelect.value;
+      localStorage.setItem('fontSize',fontSelect.value);
+    };
+
+    // Auth
+    const user=atob(sessionStorage.getItem('authUser')||''),exp=+sessionStorage.getItem('expiresAt')||0;
+    if(user!=='admin'||Date.now()>exp){alert('Unauthorized');location.href='login.html';}
+
+    // Render log
+    const subs=JSON.parse(localStorage.getItem('submissions')||'[]'),
+          tbody=document.getElementById('logBody');
+    subs.forEach(s=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${new Date(s.time).toLocaleString()}</td>
+                    <td>${s.user}</td>
+                    <td>${s.stage}</td>
+                    <td>${s.filename}</td>
+                    <td>${s.notes||''}</td>`;
+      tbody.appendChild(tr);
+    });
+    function logout(){sessionStorage.clear();location.href='login.html';}
+  </script>
+</body>
+</html>

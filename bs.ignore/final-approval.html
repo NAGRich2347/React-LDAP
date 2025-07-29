@@ -1,0 +1,359 @@
+<!-- final-approval.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Final Approval</title>
+  <link href="https://fonts.cdnfonts.com/css/bentonsans" rel="stylesheet" />
+  <style>
+    :root {
+      --light-bg: #f1f1f1;
+      --light-fg: #201436;
+      --light-panel: #ffffff;
+      --dark-bg: #1e1e1e;
+      --dark-fg: #ffffff;
+      --dark-panel: #2e2e2e;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'BentonSans Book', sans-serif;
+      display: flex;
+      height: 100vh;
+      background-color: var(--light-bg);
+      color: var(--light-fg);
+      transition: background-color 0.3s, color 0.3s;
+      overflow: hidden;
+    }
+    .settings-bar {
+      position: fixed;
+      top: 15px;
+      right: 20px;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      z-index: 1000;
+    }
+    .settings-bar select,
+    .settings-bar label,
+    .settings-bar button {
+      font-family: 'BentonSans Book';
+      font-size: 1rem;
+    }
+    .settings-bar button {
+      padding: 0.5rem 1rem;
+      background: #4F2683;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .settings-bar button:hover {
+      background: #3d1c6a;
+    }
+    .toggle-switch input { display: none; }
+    .slider {
+      position: relative;
+      width: 50px;
+      height: 24px;
+      background-color: #ccc;
+      border-radius: 24px;
+      transition: .4s;
+    }
+    .slider::before {
+      content: '\2600';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      transition: .4s;
+    }
+    #darkToggle:checked + .slider {
+      background-color: #4F2683;
+    }
+    #darkToggle:checked + .slider::before {
+      transform: translateX(26px);
+      content: '\1F319';
+    }
+    .sidebar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 260px;
+      background-color: var(--light-panel);
+      padding: 1rem;
+      overflow-y: auto;
+      transform: translateX(-100%);
+      transition: transform 0.4s ease;
+      border-right: 1px solid #ccc;
+      z-index: 900;
+    }
+    .sidebar.open {
+      transform: translateX(0);
+    }
+    .sidebar input[type="text"] {
+      width: 100%;
+      padding: .5rem;
+      margin-top: 60px;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: 'BentonSans Book';
+    }
+    .submission-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: .5rem;
+      margin-bottom: .5rem;
+      background-color: var(--light-panel);
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .submission-item:hover {
+      background-color: #eaeaea;
+    }
+    .submission-item .flag {
+      margin-left: .5rem;
+    }
+    .main {
+      flex: 1;
+      margin-left: 0;
+      padding: 2rem;
+      transition: margin-left 0.4s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .sidebar.open ~ .main {
+      margin-left: 260px;
+    }
+    .hamburger {
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      width: 30px;
+      height: 25px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      z-index: 1000;
+    }
+    .hamburger div {
+      width: 100%;
+      height: 3px;
+      background-color: var(--light-fg);
+      transition: transform .3s ease, opacity .3s ease;
+    }
+    .hamburger.open div:nth-child(1) {
+      transform: translateY(11px) rotate(45deg);
+    }
+    .hamburger.open div:nth-child(2) {
+      opacity: 0;
+    }
+    .hamburger.open div:nth-child(3) {
+      transform: translateY(-11px) rotate(-45deg);
+    }
+    h1 {
+      font-family: 'BentonSans Bold';
+      margin-top: 1.5rem;
+      color: inherit;
+    }
+    #pdfViewer {
+      width: 90%;
+      height: 65vh;
+      border: 1px solid #ccc;
+      margin: 1.5rem 0;
+    }
+    textarea, input[type="file"] {
+      width: 90%;
+      padding: .5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: 'BentonSans Book';
+    }
+    .upload-btn {
+      background-color: #4F2683;
+      color: white;
+      padding: .75rem 1.5rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color .3s;
+    }
+    .upload-btn:hover {
+      background-color: #3d1c6a;
+    }
+    .dark-mode {
+      background-color: var(--dark-bg);
+      color: var(--dark-fg);
+    }
+    .dark-mode .sidebar {
+      background-color: var(--dark-panel);
+    }
+    .dark-mode .submission-item {
+      background-color: var(--dark-panel);
+      color: var(--dark-fg);
+    }
+    .dark-mode .submission-item:hover {
+      background-color: #444;
+    }
+    .dark-mode .hamburger div {
+      background-color: var(--dark-fg);
+    }
+    .dark-mode textarea,
+    .dark-mode input[type="file"] {
+      background-color: #3b3b3b;
+      color: var(--dark-fg);
+      border: 1px solid #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="settings-bar">
+    <label class="toggle-switch">
+      <input type="checkbox" id="darkToggle"><span class="slider"></span>
+    </label>
+    <select id="fontSizeSelect">
+      <option value="14px">Font: Default</option>
+      <option value="16px">Font: Large</option>
+      <option value="12px">Font: Small</option>
+    </select>
+    <label><input type="checkbox" id="confirmToggle"> Confirm</label>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <div class="sidebar" id="sidebar">
+    <input type="text" id="searchBox" placeholder="Search…">
+    <div id="submissionList"></div>
+  </div>
+
+  <div class="hamburger" id="hamburger">
+    <div></div><div></div><div></div>
+  </div>
+
+  <div class="main">
+    <h1>Final Approval</h1>
+    <div id="selectedName" style="font-weight:500;"></div>
+    <iframe id="pdfViewer"></iframe>
+    <textarea id="notesBox" placeholder="Final notes…"></textarea>
+    <input type="file" id="notesUpload" accept=".txt,.pdf">
+    <button class="upload-btn" id="approveBtn">✅ Approve & Finish</button>
+  </div>
+
+  <script>
+    // Settings load/persist
+    const darkToggle=document.getElementById('darkToggle'),
+          fontSelect=document.getElementById('fontSizeSelect'),
+          confirmToggle=document.getElementById('confirmToggle');
+    darkToggle.checked = localStorage.getItem('theme')==='dark';
+    document.body.classList.toggle('dark-mode', darkToggle.checked);
+    fontSelect.value = localStorage.getItem('fontSize') || '14px';
+    document.documentElement.style.fontSize = fontSelect.value;
+    confirmToggle.checked = localStorage.getItem('confirmOn')!=='false';
+
+    darkToggle.onchange = _ => {
+      document.body.classList.toggle('dark-mode', darkToggle.checked);
+      localStorage.setItem('theme', darkToggle.checked ? 'dark' : 'light');
+    };
+    fontSelect.onchange = _ => {
+      document.documentElement.style.fontSize = fontSelect.value;
+      localStorage.setItem('fontSize', fontSelect.value);
+    };
+    confirmToggle.onchange = _ => {
+      localStorage.setItem('confirmOn', confirmToggle.checked);
+    };
+
+    // Auth guard
+    const user = atob(sessionStorage.getItem('authUser')||''),
+          expiry = +sessionStorage.getItem('expiresAt')||0;
+    if(user!=='reviewer' || Date.now()>expiry){
+      alert('Unauthorized or session expired.');
+      location.href='login.html';
+    }
+
+    // Sidebar toggle
+    const sidebar=document.getElementById('sidebar'),
+          ham=document.getElementById('hamburger');
+    ham.onclick = _ => {
+      sidebar.classList.toggle('open');
+      ham.classList.toggle('open');
+    };
+
+    // Load and render submissions
+    let subs = JSON.parse(localStorage.getItem('submissions')||'[]'),
+        receipts = JSON.parse(localStorage.getItem('receipts')||'{}'),
+        sel = null;
+    const listEl = document.getElementById('submissionList'),
+          searchBox = document.getElementById('searchBox'),
+          pdfViewer = document.getElementById('pdfViewer'),
+          selectedNameEl = document.getElementById('selectedName'),
+          notesBox = document.getElementById('notesBox'),
+          approveBtn = document.getElementById('approveBtn');
+
+    function renderList(filter=''){
+      listEl.innerHTML = '';
+      subs.filter(s=>s.stage==='Stage2' &&
+        (!filter||s.filename.toLowerCase().includes(filter)))
+      .forEach(s=>{
+        const div=document.createElement('div');
+        div.className='submission-item';
+        const read = receipts[s.filename];
+        div.innerHTML = `
+          <span>${s.filename}</span>
+          <span class="flag">${read?'✅':'⚠️'}</span>
+        `;
+        div.onclick = _ => {
+          if(confirmToggle.checked && !confirm('Open submission?')) return;
+          receipts[s.filename]=true;
+          localStorage.setItem('receipts', JSON.stringify(receipts));
+          div.querySelector('.flag').textContent='✅';
+          sel = s;
+          selectedNameEl.textContent = s.filename;
+          const blob = new Blob([Uint8Array.from(atob(s.content),c=>c.charCodeAt(0))], {type:'application/pdf'});
+          pdfViewer.src = URL.createObjectURL(blob);
+        };
+        listEl.appendChild(div);
+      });
+    }
+    searchBox.oninput = e=> renderList(e.target.value);
+    renderList();
+
+    // Approve action
+    approveBtn.onclick = _ => {
+      if(!sel) return alert('Select a document first');
+      if(confirmToggle.checked && !confirm('Approve & finish?')) return;
+      // Remove from Stage2 and add Stage3
+      subs = subs.filter(x=>x!==sel);
+      const now = Date.now(), windowMs = 8*60*60*1000;
+      const actions = subs.filter(x=>x.user===user && x.stage==='Stage3' && now - x.time < windowMs);
+      if(actions.length>=4) return alert('Limit 4 approvals per 8h');
+      const rec = {
+        ...sel,
+        filename: 'Approved_' + sel.filename,
+        stage: 'Stage3',
+        time: now,
+        notes: notesBox.value.trim()
+      };
+      subs.push(rec);
+      localStorage.setItem('submissions', JSON.stringify(subs));
+      alert('Final approval complete!');
+      renderList();
+    };
+
+    function logout(){ sessionStorage.clear(); location.href='login.html'; }
+  </script>
+</body>
+</html>
