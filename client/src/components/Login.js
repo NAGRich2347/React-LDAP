@@ -291,15 +291,17 @@ export default function Login() {
     }
     try {
       // Try to call the backend authentication API first
-      const response = await api.post('/submissions/login', {
+      const response = await api.post('/auth/login', {
         username,
         password
       });
-      if (response.data && response.data.username && response.data.role) {
-        sessionStorage.setItem('authUser', btoa(response.data.username));
-        sessionStorage.setItem('authRole', btoa(response.data.role));
+      if (response.data && response.data.success && response.data.user) {
+        const user = response.data.user;
+        sessionStorage.setItem('authUser', btoa(user.username));
+        sessionStorage.setItem('authRole', btoa(user.role));
+        sessionStorage.setItem('authToken', response.data.token);
         sessionStorage.setItem('expiresAt', (Date.now() + 15 * 60 * 1000).toString());
-        navigate(roleToRoute[response.data.role] || '/login');
+        navigate(roleToRoute[user.role] || '/login');
       } else {
         setError('Invalid response from server.');
         setRetry(true);
