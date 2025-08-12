@@ -27,4 +27,16 @@ const api = axios.create({
   withCredentials: true // Enable sending cookies and auth headers
 });
 
+// Attach JWT from sessionStorage for all requests
+api.interceptors.request.use((config) => {
+  try {
+    const token = sessionStorage.getItem('authToken');
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  } catch (_) {}
+  return config;
+});
+
 export default api;

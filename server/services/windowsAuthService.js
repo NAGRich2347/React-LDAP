@@ -1,13 +1,15 @@
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
+const ActiveDirectory = require('activedirectory2');
 
 // Load domain configuration
 const DOMAIN_CONFIG = {
-  server: process.env.AD_SERVER || 'ldap://your-domain-controller.com',
+  url: process.env.AD_SERVER || 'ldap://your-domain-controller.com',
   baseDN: process.env.AD_BASE_DN || 'DC=yourdomain,DC=com',
-  username: process.env.AD_USERNAME || 'service-account@yourdomain.com',
-  password: process.env.AD_PASSWORD || 'service-password',
+  username: process.env.AD_USERNAME || process.env.AD_SERVICE_USERNAME || 'service-account@yourdomain.com',
+  password: process.env.AD_PASSWORD || process.env.AD_SERVICE_PASSWORD || 'service-password',
+  domain: process.env.AD_DOMAIN || undefined,
   groups: {
     students: process.env.AD_STUDENT_GROUP || 'CN=Students,OU=Groups,DC=yourdomain,DC=com',
     librarians: process.env.AD_LIBRARIAN_GROUP || 'CN=Librarians,OU=Groups,DC=yourdomain,DC=com',
@@ -15,6 +17,38 @@ const DOMAIN_CONFIG = {
     admins: process.env.AD_ADMIN_GROUP || 'CN=Admins,OU=Groups,DC=yourdomain,DC=com'
   }
 };
+
+function buildADInstance() {
+  const config = {
+    url: DOMAIN_CONFIG.url,
+    baseDN: DOMAIN_CONFIG.baseDN,
+    username: DOMAIN_CONFIG.username,
+    password: DOMAIN_CONFIG.password,
+    tlsOptions: { rejectUnauthorized: false }
+  };
+  return new ActiveDirectory(config);
+}
+
+/**
+ * Get AD group membership for a user
+ * @param {string} usernameOrUpn
+ * @returns {Promise<Array>} groups
+ */
+async function getUserGroupsFromAD(usernameOrUpn) {
+  const ad = buildADInstance();
+  const upn = DOMAIN_CONFIG.domain && !String(usernameOrUpn).includes('@')
+    ? `${usernameOrUpn}@${DOMAIN_CONFIG.domain}`
+    : usernameOrUpn;
+  return await new Promise((resolve) => {
+    ad.getGroupMembershipForUser(upn, (err, groups) => {
+      if (err) {
+        console.error('AD groups error:', err);
+        return resolve([]);
+      }
+      resolve(groups || []);
+    });
+  });
+}
 
 // Hypothetical user data for testing
 const HYPOTHETICAL_USERS = {
@@ -48,10 +82,66 @@ const HYPOTHETICAL_USERS = {
  * @returns {Promise<{success: boolean, user?: object, error?: string}>}
  */
 async function authenticateWithAD(username, password) {
-  // In production, this would integrate with Active Directory
-  // For now, we'll use simulation mode
-  console.log('Production AD authentication not configured. Using simulation mode.');
-  return simulateWindowsAuth(username, password);
+  try {
+    const ad = buildADInstance();
+    // Allow either userPrincipalName (user@domain) or sAMAccountName
+    const upn = DOMAIN_CONFIG.domain && !username.includes('@')
+      ? `${username}@${DOMAIN_CONFIG.domain}`
+      : username;
+
+    const isValid = await new Promise((resolve) => {
+      ad.authenticate(upn, password, (err, auth) => {
+        if (err) {
+          console.error('AD authenticate error:', err);
+          return resolve(false);
+        }
+        resolve(Boolean(auth));
+      });
+    });
+
+    if (!isValid) {
+      return { success: false, error: 'Invalid credentials' };
+    }
+
+    const [user, groups] = await Promise.all([
+      new Promise((resolve) => {
+        ad.findUser(upn, (err, user) => {
+          if (err) {
+            console.error('AD findUser error:', err);
+            return resolve(null);
+          }
+          resolve(user);
+        });
+      }),
+      new Promise((resolve) => {
+        ad.getGroupMembershipForUser(upn, (err, groups) => {
+          if (err) {
+            console.error('AD groups error:', err);
+            return resolve([]);
+          }
+          resolve(groups || []);
+        });
+      })
+    ]);
+
+    const role = determineUserRole(groups);
+    const normalizedUser = {
+      username: user?.sAMAccountName || user?.userPrincipalName || username,
+      displayName: user?.displayName || username,
+      email: user?.mail || `${username}@${DOMAIN_CONFIG.domain || 'local'}`,
+      role,
+      groups: (groups || []).map(g => (typeof g === 'string' ? g : g.cn || g.dn || ''))
+    };
+
+    return { success: true, user: normalizedUser };
+  } catch (error) {
+    console.error('authenticateWithAD unexpected error:', error);
+    // Fallback to simulation in development
+    if (process.env.NODE_ENV !== 'production') {
+      return simulateWindowsAuth(username, password);
+    }
+    return { success: false, error: 'AD authentication failed' };
+  }
 }
 
 /**
@@ -64,11 +154,14 @@ function determineUserRole(groups) {
     return 'student'; // Default role
   }
 
-  const groupNames = groups.map(group => 
-    typeof group === 'string' ? group.toLowerCase() : group.cn?.toLowerCase() || ''
-  );
+  const groupNames = groups.map(group => {
+    if (typeof group === 'string') return group.toLowerCase();
+    if (group.cn) return String(group.cn).toLowerCase();
+    if (group.dn) return String(group.dn).toLowerCase();
+    return '';
+  });
   
-  if (groupNames.some(group => group.includes('admin') || group.includes('administrator'))) {
+  if (groupNames.some(group => group.includes('admin') || group.includes('administrator') || group.includes('domain admins'))) {
     return 'admin';
   } else if (groupNames.some(group => group.includes('librarian') || group.includes('library'))) {
     return 'librarian';
@@ -156,5 +249,6 @@ module.exports = {
   verifyToken,
   getHypotheticalUsers,
   simulateWindowsAuth,
-  DOMAIN_CONFIG
+  DOMAIN_CONFIG,
+  getUserGroupsFromAD
 }; 

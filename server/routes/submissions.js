@@ -32,6 +32,7 @@ router.get('/health', healthCheck);
 
 // Authentication routes
 router.post('/auth/login', login);
+// Optional SSO route is served directly from index when ENABLE_SSPI=true
 router.post('/auth/logout', authenticateToken, logout);
 router.get('/auth/me', authenticateToken, getCurrentUser);
 

@@ -7,6 +7,14 @@ const routes = require('./routes/submissions');
 const { errorHandler } = require('./middleware/errorHandler');
 const fileUpload = require('express-fileupload');
 require('dotenv').config();
+let sspi;
+if (process.env.ENABLE_SSPI === 'true') {
+  // Conditionally load SSPI to avoid non-Windows build/runtime issues
+  // eslint-disable-next-line global-require
+  sspi = require('node-expose-sspi');
+}
+const { generateToken, determineUserRole, getUserGroupsFromAD } = require('./services/windowsAuthService');
+const os = require('os');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -57,7 +65,7 @@ app.use(fileUpload({
   safeFileNames: true,
   preserveExtension: true,
   useTempFiles: true,
-  tempFileDir: '/tmp/'
+  tempFileDir: os.tmpdir()
 }));
 
 // Request logging middleware
@@ -68,6 +76,37 @@ app.use((req, res, next) => {
 
 // API routes
 app.use('/api/submissions', routes);
+
+// Optional Windows Integrated Authentication endpoint (Kerberos/NTLM)
+// When client and server are in the same AD domain and browser is configured to allow
+// integrated auth, this endpoint returns a JWT derived from the negotiated identity.
+if (process.env.ENABLE_SSPI === 'true') {
+  app.use(sspi());
+
+  app.get('/api/submissions/auth/sso', async (req, res) => {
+    try {
+      if (!req.sspi || !req.sspi.user) {
+        return res.status(401).json({ error: 'SSPI user not available' });
+      }
+      const accountName = req.sspi.user.displayName || req.sspi.user.name || req.sspi.user.login || req.sspi.user.upn;
+      const samOrUpn = req.sspi.user.login || req.sspi.user.upn || accountName;
+      const groups = await getUserGroupsFromAD(samOrUpn);
+      const role = determineUserRole(groups);
+      const user = {
+        username: req.sspi.user.login || req.sspi.user.upn || accountName,
+        displayName: accountName,
+        email: req.sspi.user.mail || req.sspi.user.upn || '',
+        role,
+        groups: groups.map(g => (typeof g === 'string' ? g : g.cn || g.dn || ''))
+      };
+      const token = generateToken(user);
+      res.json({ success: true, user, token });
+    } catch (err) {
+      console.error('SSPI SSO error:', err);
+      res.status(500).json({ error: 'SSO failed' });
+    }
+  });
+}
 
 // Root endpoint with system information
 app.get('/', (req, res) => {

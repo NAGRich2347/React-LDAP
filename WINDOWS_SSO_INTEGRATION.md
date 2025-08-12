@@ -63,6 +63,7 @@ AD_SERVER=ldap://your-domain-controller.com
 AD_BASE_DN=DC=yourdomain,DC=com
 AD_USERNAME=service-account@yourdomain.com
 AD_PASSWORD=service-password
+AD_DOMAIN=yourdomain.com
 
 # Active Directory Group Mappings
 AD_STUDENT_GROUP=CN=Students,OU=Groups,DC=yourdomain,DC=com
@@ -123,6 +124,19 @@ npm install
    - Librarians: Add librarian usernames
    - Reviewers: Add reviewer usernames
    - Admins: Add administrator usernames
+
+### 5. Windows Integrated Authentication (SSPI)
+
+Optionally enable SSPI for true Single Sign-On when clients and server are joined to the same domain and browsers are configured for Integrated Authentication.
+
+1. In `server/.env` set:
+   ```
+   ENABLE_SSPI=true
+   AD_DOMAIN=yourdomain.com
+   ```
+2. Ensure the server runs on Windows and is joined to the domain.
+3. Configure browser to allow Negotiate/NTLM for your server URL.
+4. Call `GET /api/submissions/auth/sso` from the client to obtain a JWT.
 
 ## Hypothetical Users
 

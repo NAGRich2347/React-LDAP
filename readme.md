@@ -48,6 +48,15 @@ npm install       # install server dependencies
 npm run dev       # start Express proxy on port 3001
 ```
 
+Optional: enable Windows SSO (requires Windows domain-joined host):
+
+1. In `server/.env`, set:
+   ```
+   ENABLE_SSPI=true
+   AD_DOMAIN=yourdomain.com
+   ```
+2. Access `GET http://localhost:3001/api/submissions/auth/sso` to sign in via Integrated Auth.
+
 ### 2. **Launch Frontend:**
 
 ```bash
@@ -180,6 +189,17 @@ You can also extract repeated UI elements into reusable components under `client
    - Librarians: Add librarian usernames
    - Reviewers: Add reviewer usernames
    - Admins: Add administrator usernames
+
+### PowerShell seeding (on Windows Server 2025 AD DS)
+
+Run this as a domain admin on your AD DS:
+
+```powershell
+cd server\scripts
+./Seed-AD.ps1 -DomainDN "DC=yourdomain,DC=com" -UsersOU "OU=Users" -GroupsOU "OU=Groups" -DefaultPassword "P@ssw0rd!"
+```
+
+This creates OUs `Users` and `Groups`, groups `Students|Librarians|Reviewers|Admins`, and sample users matching the app’s hypothetical accounts, then adds them to the groups.
 
 ### Environment Variables
 

@@ -341,6 +341,29 @@ export default function Login() {
     setLoginAttempted(false);
   };
 
+  const handleSso = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      // Call SSO endpoint which will use SSPI on the server (if enabled)
+      const res = await api.get('/auth/sso');
+      if (res.data && res.data.success) {
+        const { user, token } = res.data;
+        sessionStorage.setItem('authUser', btoa(user.username));
+        sessionStorage.setItem('authRole', btoa(user.role));
+        sessionStorage.setItem('authToken', token);
+        sessionStorage.setItem('expiresAt', (Date.now() + 15 * 60 * 1000).toString());
+        navigate(roleToRoute[user.role] || '/login');
+      } else {
+        setError('SSO failed. Please use username/password or contact IT.');
+      }
+    } catch (e) {
+      setError('SSO not available. Use username/password.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={{ ...styles.body(dark, fontSize), flexDirection: 'column', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       {/* Global CSS to force fullscreen layout without scrollbars */}
@@ -455,6 +478,15 @@ export default function Login() {
           aria-busy={loading}
         >
           {loading && <span style={styles.spinner} aria-label="Loading" />} Log In
+        </button>
+        <button
+          type="button"
+          style={{ ...styles.button(dark, loading), background: '#2ecc71', marginTop: 10 }}
+          disabled={loading}
+          onClick={handleSso}
+          aria-label="Sign in with Windows"
+        >
+          Use Windows SSO
         </button>
         {retry && (
           <button
