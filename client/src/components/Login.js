@@ -283,18 +283,21 @@ export default function Login() {
     setError('');
     setLoading(true);
     setRetry(false);
+    
     // Real-time validation before API call
     if (validateUsername(username) || validatePassword(password)) {
       setError('Please fix the errors above and try again.');
       setLoading(false);
       return;
     }
+    
     try {
       // Try to call the backend authentication API first
       const response = await api.post('/auth/login', {
         username,
         password
       });
+      
       if (response.data && response.data.success && response.data.user) {
         const user = response.data.user;
         sessionStorage.setItem('authUser', btoa(user.username));
@@ -307,26 +310,38 @@ export default function Login() {
         setRetry(true);
       }
     } catch (err) {
-      // Fallback user credentials
-      const fallbackUsers = [
-        { username: 'student1', password: 'password', role: 'student' },
-        { username: 'student2', password: 'password', role: 'student' },
-        { username: 'student3', password: 'password', role: 'student' },
-        { username: 'student4', password: 'password', role: 'student' },
-        { username: 'librarian1', password: 'password', role: 'librarian' },
-        { username: 'librarian2', password: 'password', role: 'librarian' },
-        { username: 'reviewer1', password: 'password', role: 'reviewer' },
-        { username: 'reviewer2', password: 'password', role: 'reviewer' },
-        { username: 'admin1', password: 'password', role: 'admin' }
+      console.error('Login error:', err);
+      
+      // Use the test users from the server's hypothetical data
+      const testUsers = [
+        // Students
+        { username: 'john.smith', password: 'any', role: 'student' },
+        { username: 'sarah.jones', password: 'any', role: 'student' },
+        { username: 'michael.brown', password: 'any', role: 'student' },
+        { username: 'emily.davis', password: 'any', role: 'student' },
+        { username: 'david.wilson', password: 'any', role: 'student' },
+        // Librarians
+        { username: 'dr.martinez', password: 'any', role: 'librarian' },
+        { username: 'prof.thompson', password: 'any', role: 'librarian' },
+        { username: 'ms.chen', password: 'any', role: 'librarian' },
+        // Reviewers
+        { username: 'dr.anderson', password: 'any', role: 'reviewer' },
+        { username: 'prof.garcia', password: 'any', role: 'reviewer' },
+        { username: 'dr.kumar', password: 'any', role: 'reviewer' },
+        // Admins
+        { username: 'admin.rodriguez', password: 'any', role: 'admin' },
+        { username: 'admin.patel', password: 'any', role: 'admin' }
       ];
-      const user = fallbackUsers.find(u => u.username === username && u.password === password);
+      
+      const user = testUsers.find(u => u.username === username);
       if (user) {
+        // In simulation mode, any password works
         sessionStorage.setItem('authUser', btoa(user.username));
         sessionStorage.setItem('authRole', btoa(user.role));
         sessionStorage.setItem('expiresAt', (Date.now() + 15 * 60 * 1000).toString());
         navigate(roleToRoute[user.role] || '/login');
       } else {
-        setError('Invalid username or password.');
+        setError('Invalid username. Use test accounts like john.smith, dr.martinez, admin.rodriguez, etc.');
         setRetry(true);
       }
     } finally {
@@ -345,8 +360,10 @@ export default function Login() {
     try {
       setLoading(true);
       setError('');
-      // Call SSO endpoint which will use SSPI on the server (if enabled)
+      
+      // Call the correct SSO endpoint
       const res = await api.get('/auth/sso');
+      
       if (res.data && res.data.success) {
         const { user, token } = res.data;
         sessionStorage.setItem('authUser', btoa(user.username));
@@ -358,7 +375,14 @@ export default function Login() {
         setError('SSO failed. Please use username/password or contact IT.');
       }
     } catch (e) {
-      setError('SSO not available. Use username/password.');
+      console.error('SSO error:', e);
+      if (e.response?.status === 401) {
+        setError('Windows SSO not available. Please use username/password login.');
+      } else if (e.response?.status === 500) {
+        setError('SSO service error. Please use username/password login.');
+      } else {
+        setError('SSO not available. Use username/password login.');
+      }
     } finally {
       setLoading(false);
     }

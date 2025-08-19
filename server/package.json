@@ -17,7 +17,7 @@
     "helmet": "^6.0.0",
     "jsonwebtoken": "^9.0.0",
     "uuid": "^11.1.0",
-    "node-expose-sspi": "^0.6.10",
+    "node-expose-sspi": "^0.1.59",
     "activedirectory2": "^2.2.0"
   },
   "devDependencies": {
